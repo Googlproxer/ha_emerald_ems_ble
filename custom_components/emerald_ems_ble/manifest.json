@@ -1,0 +1,16 @@
+{
+  "domain": "emerald_ems_ble",
+  "name": "Emerald Energy Advisor (BLE)",
+  "version": "0.1.0",
+  "documentation": "https://example.com/emerald_ems_ble",
+  "issue_tracker": "https://example.com/emerald_ems_ble/issues",
+  "requirements": [],
+  "dependencies": [],
+  "codeowners": ["@your-github-handle"],
+  "config_flow": true,
+  "bluetooth": [
+    { "local_name": "Emerald*" }
+  ],
+  "iot_class": "local_polling",
+  "loggers": ["emerald_ems_ble"]
+}
