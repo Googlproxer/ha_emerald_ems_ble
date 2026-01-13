@@ -6,6 +6,7 @@ from homeassistant import config_entries
 from homeassistant.components import bluetooth
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.data_entry_flow import FlowResult
+from homeassistant.helpers import selector
 
 from .const import (
     DOMAIN,
@@ -21,6 +22,10 @@ class EmeraldConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
+    def __init__(self) -> None:
+        """Initialize the config flow."""
+        self._discovery_info: bluetooth.BluetoothServiceInfoBleak | None = None
+
     async def async_step_bluetooth(
         self, discovery_info: bluetooth.BluetoothServiceInfoBleak
     ) -> FlowResult:
@@ -29,18 +34,13 @@ class EmeraldConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         await self.async_set_unique_id(discovery_info.address)
         self._abort_if_unique_id_configured()
 
+        self._discovery_info = discovery_info
+
         self.context["title_placeholders"] = {
             "name": discovery_info.name or "Emerald Energy Advisor",
         }
 
-        return await self.async_step_user(
-            user_input={
-                CONF_ADDRESS: discovery_info.address,
-                CONF_NAME: discovery_info.name or "Emerald Energy Advisor",
-                CONF_PULSES_PER_KWH: DEFAULT_PULSES_PER_KWH,
-                CONF_PASSKEY: DEFAULT_PASSKEY,
-            }
-        )
+        return await self.async_step_user()
 
     async def async_step_user(self, user_input: dict | None = None) -> FlowResult:
         """Handle the initial step initiated by the user."""
@@ -55,11 +55,19 @@ class EmeraldConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             title = user_input.get(CONF_NAME) or "Emerald Energy Advisor"
             return self.async_create_entry(title=title, data=user_input)
 
+        # Pre-fill address and name if we have discovery info
+        defaults = {}
+        if self._discovery_info:
+            defaults[CONF_ADDRESS] = self._discovery_info.address
+            defaults[CONF_NAME] = self._discovery_info.name or "Emerald Energy Advisor"
+
         data_schema = vol.Schema(
             {
-                vol.Required(CONF_ADDRESS): str,
-                vol.Optional(CONF_NAME, default="Emerald Energy Advisor"): str,
-                vol.Optional(CONF_PULSES_PER_KWH, default=DEFAULT_PULSES_PER_KWH): vol.All(
+                vol.Required(CONF_ADDRESS, default=defaults.get(CONF_ADDRESS)): selector.BluetoothSelector(
+                    selector.BluetoothSelectorConfig()
+                ),
+                vol.Optional(CONF_NAME, default=defaults.get(CONF_NAME, "Emerald Energy Advisor")): str,
+                vol.Required(CONF_PULSES_PER_KWH, default=DEFAULT_PULSES_PER_KWH): vol.All(
                     int, vol.Range(min=1, max=20000)
                 ),
                 vol.Optional(CONF_PASSKEY, default=DEFAULT_PASSKEY): vol.Any(None, int),
