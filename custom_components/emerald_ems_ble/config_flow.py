@@ -6,6 +6,7 @@ from homeassistant import config_entries
 from homeassistant.components import bluetooth
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.data_entry_flow import FlowResult
+from homeassistant.helpers import selector
 
 from .const import (
     DOMAIN,
@@ -57,9 +58,11 @@ class EmeraldConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         data_schema = vol.Schema(
             {
-                vol.Required(CONF_ADDRESS): str,
+                vol.Required(CONF_ADDRESS): selector.BluetoothSelector(
+                    selector.BluetoothSelectorConfig()
+                ),
                 vol.Optional(CONF_NAME, default="Emerald Energy Advisor"): str,
-                vol.Optional(CONF_PULSES_PER_KWH, default=DEFAULT_PULSES_PER_KWH): vol.All(
+                vol.Required(CONF_PULSES_PER_KWH, default=DEFAULT_PULSES_PER_KWH): vol.All(
                     int, vol.Range(min=1, max=20000)
                 ),
                 vol.Optional(CONF_PASSKEY, default=DEFAULT_PASSKEY): vol.Any(None, int),

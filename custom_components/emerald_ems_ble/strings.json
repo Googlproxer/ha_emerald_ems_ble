@@ -1,0 +1,16 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Emerald Energy Advisor (BLE)",
+        "description": "Configure your Emerald Energy Advisor device",
+        "data": {
+          "address": "Address",
+          "name": "Name",
+          "pulses_per_kwh": "Pulses Per kWh",
+          "passkey": "Passkey"
+        }
+      }
+    }
+  }
+}
