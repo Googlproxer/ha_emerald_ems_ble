@@ -60,15 +60,13 @@ class EmeraldConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if self._discovery_info:
             defaults[CONF_ADDRESS] = self._discovery_info.address
             defaults[CONF_NAME] = self._discovery_info.name or "Emerald Energy Advisor"
-        else:
-            defaults[CONF_NAME] = "Emerald Energy Advisor"
 
         data_schema = vol.Schema(
             {
                 vol.Required(CONF_ADDRESS, default=defaults.get(CONF_ADDRESS)): selector.BluetoothSelector(
                     selector.BluetoothSelectorConfig()
                 ),
-                vol.Optional(CONF_NAME, default=defaults[CONF_NAME]): str,
+                vol.Optional(CONF_NAME, default=defaults.get(CONF_NAME, "Emerald Energy Advisor")): str,
                 vol.Required(CONF_PULSES_PER_KWH, default=DEFAULT_PULSES_PER_KWH): vol.All(
                     int, vol.Range(min=1, max=20000)
                 ),
