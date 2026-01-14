@@ -63,9 +63,7 @@ class EmeraldConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         data_schema = vol.Schema(
             {
-                vol.Required(CONF_ADDRESS, default=defaults.get(CONF_ADDRESS)): selector.BluetoothSelector(
-                    selector.BluetoothSelectorConfig()
-                ),
+                vol.Required(CONF_ADDRESS, default=defaults.get(CONF_ADDRESS)): selector.TextSelector(),
                 vol.Optional(CONF_NAME, default=defaults.get(CONF_NAME, "Emerald Energy Advisor")): str,
                 vol.Required(CONF_PULSES_PER_KWH, default=DEFAULT_PULSES_PER_KWH): vol.All(
                     int, vol.Range(min=1, max=20000)
