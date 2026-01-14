@@ -67,6 +67,10 @@ class EmeraldConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if self._discovery_info:
             defaults[CONF_ADDRESS] = self._discovery_info.address
             defaults[CONF_NAME] = self._discovery_info.name or "Emerald Energy Advisor"
+            # Ensure discovered device is in the list
+            if self._discovery_info.address not in discovered_devices:
+                device_name = self._discovery_info.name or "Unknown"
+                discovered_devices[self._discovery_info.address] = f"{device_name} ({self._discovery_info.address})"
 
         # Build schema with Bluetooth device picker if devices are available
         if discovered_devices:
