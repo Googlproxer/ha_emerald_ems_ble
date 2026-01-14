@@ -1,106 +1,129 @@
--<!-- Use this file to provide workspace-specific custom instructions to Copilot. For more details, visit https://code.visualstudio.com/docs/copilot/copilot-customization#_use-a-githubcopilotinstructionsmd-file -->
+# Emerald Energy Advisor (BLE) - Copilot Instructions
 
-- [x] Verify that the copilot-instructions.md file in the .github directory is created.
+## Project Overview
 
-- [x] Clarify Project Requirements
-<!-- Ask for project type, language, and frameworks if not specified. Skip if already provided. -->
+This is a custom Home Assistant integration that communicates with Emerald Energy Advisor devices over Bluetooth Low Energy (BLE). The integration uses the documented BLE protocol to enable auto-upload and parse 30-second pulse notifications into power readings.
 
-- [x] Scaffold the Project
-<!--
-Ensure that the previous step has been marked as completed.
-Call project setup tool with projectType parameter.
-Run scaffolding command to create project files and folders.
-Use '.' as the working directory.
-If no appropriate projectType is available, search documentation using available tools.
-Otherwise, create the project structure manually using available file creation tools.
--->
+**Key Features:**
+- Bluetooth discovery for devices with local_name matching `Emerald*`
+- Config flow for adding devices (by address or discovery)
+- DataUpdateCoordinator-driven polling with BLE connection management
+- Sensor entities for instantaneous power (W) and raw 30s pulse count
+- Diagnostics endpoint for troubleshooting
 
-- [x] Customize the Project
-<!--
-Verify that all previous steps have been completed successfully and you have marked the step as completed.
-Develop a plan to modify codebase according to user requirements.
-Apply modifications using appropriate tools and user-provided references.
-Skip this step for "Hello World" projects.
--->
+## Tech Stack
 
-- [x] Install Required Extensions
-<!-- ONLY install extensions provided mentioned in the get_project_setup_info. Skip this step otherwise and mark as completed. -->
+- **Language:** Python 3.11+
+- **Framework:** Home Assistant Core
+- **Key Dependencies:**
+  - `bleak` and `bleak-retry-connector` for BLE communication
+  - Home Assistant's `bluetooth` component for device discovery
+  - `DataUpdateCoordinator` for state management
+- **Testing:** Basic syntax validation via `python -m compileall`
 
-- [x] Compile the Project
-<!--
-Verify that all previous steps have been completed.
-Install any missing dependencies.
-Run diagnostics and resolve any issues.
-Check for markdown files in project folder for relevant instructions on how to do this.
--->
+## Project Structure
 
-- [x] Create and Run Task
-<!--
-Verify that all previous steps have been completed.
-Check https://code.visualstudio.com/docs/debugtest/tasks to determine if the project needs a task. If so, use the create_and_run_task to create and launch a task based on package.json, README.md, and project structure.
-Skip this step otherwise.
- -->
+```
+custom_components/emerald_ems_ble/
+├── __init__.py           # Integration setup and entry point
+├── config_flow.py        # Configuration flow for device setup
+├── const.py              # Constants (UUIDs, commands, defaults)
+├── coordinator.py        # BLE client and DataUpdateCoordinator
+├── diagnostics.py        # Diagnostics data provider
+├── manifest.json         # Integration metadata
+├── sensor.py             # Sensor entities (power_w, pulses_30s)
+└── strings.json          # Localized strings for UI
 
-- [ ] Launch the Project
-<!--
-Verify that all previous steps have been completed.
-Prompt user for debug mode, launch only if confirmed.
- -->
+tests/
+├── __init__.py
+└── test_const.py         # Basic constant tests
+```
 
-- [ ] Ensure Documentation is Complete
-<!--
-Verify that all previous steps have been completed.
-Verify that README.md and the copilot-instructions.md file in the .github directory exists and contains current project information.
-Clean up the copilot-instructions.md file in the .github directory by removing all HTML comments.
- -->
+## Coding Standards
 
-<!--
-## Execution Guidelines
-PROGRESS TRACKING:
-- If any tools are available to manage the above todo list, use it to track progress through this checklist.
-- After completing each step, mark it complete and add a summary.
-- Read current todo list status before starting each new step.
+### Python Style
+- Use Python 3.11+ type hints (e.g., `str | None` instead of `Optional[str]`)
+- Import `from __future__ import annotations` at the top of each file
+- Follow Home Assistant's coding standards and patterns
+- Use `_LOGGER = logging.getLogger(__name__)` for logging
+- Prefer `async`/`await` for I/O operations
 
-COMMUNICATION RULES:
-- Avoid verbose explanations or printing full command outputs.
-- If a step is skipped, state that briefly (e.g. "No extensions needed").
-- Do not explain project structure unless asked.
-- Keep explanations concise and focused.
+### Home Assistant Patterns
+- Use `ConfigEntry` for integration configuration
+- Implement `DataUpdateCoordinator` for polling/updates
+- Use `async_ble_device_from_address` from `homeassistant.components.bluetooth`
+- Follow Home Assistant's entity naming conventions
+- Use `DOMAIN` constant from `const.py` for all domain references
 
-DEVELOPMENT RULES:
-- Use '.' as the working directory unless user specifies otherwise.
-- Avoid adding media or external links unless explicitly requested.
-- Use placeholders only with a note that they should be replaced.
-- If the project setup information has additional rules, follow them strictly.
+### BLE Protocol
+- Service UUID: `00001910-0000-1000-8000-00805f9b34fb`
+- Read characteristic: `00002b10-0000-1000-8000-00805f9b34fb` (Time Read)
+- Write characteristic: `00002b11-0000-1000-8000-00805f9b34fb`
+- Enable auto-upload command: `bytes([0x00, 0x01, 0x02, 0x0B, 0x01, 0x01])`
+- Parse 30s pulse notifications into watts using configured `pulses_per_kwh`
 
-FOLDER CREATION RULES:
-- Always use the current directory as the project root.
-- If you are running any terminal commands, use the '.' argument to ensure that the current working directory is used ALWAYS.
-- Do not create a new folder unless the user explicitly requests it besides a .vscode folder for a tasks.json file.
-- If any of the scaffolding commands mention that the folder name is not correct, let the user know to create a new folder with the correct name and then reopen it again in vscode.
+### Naming Conventions
+- Configuration keys use snake_case (e.g., `pulses_per_kwh`, `passkey`)
+- Class names use PascalCase (e.g., `EmeraldBleClient`, `EmeraldConfigFlow`)
+- Private methods/attributes use leading underscore (e.g., `_pulse_multiplier_kw`)
+- Constants use UPPER_SNAKE_CASE (e.g., `SERVICE_UUID`, `DEFAULT_POLL_INTERVAL`)
 
-EXTENSION INSTALLATION RULES:
-- Only install extension specified by the get_project_setup_info tool. DO NOT INSTALL any other extensions.
+## Development Workflow
 
-PROJECT CONTENT RULES:
-- If the user has not specified project details, assume they want a "Hello World" project as a starting point.
-- Avoid adding links of any type (URLs, files, folders, etc.) or integrations that are not explicitly required.
-- Avoid generating images, videos, or any other media files unless explicitly requested.
-- If you need to use any media assets as placeholders, let the user know that these are placeholders and should be replaced with the actual assets later.
-- Ensure all generated components serve a clear purpose within the user's requested workflow.
-- If a feature is assumed but not confirmed, prompt the user for clarification before including it.
-- If you are working on a VS Code extension, use the VS Code API tool with a query to find relevant VS Code API references and samples related to that query.
+### Syntax Validation
+```bash
+python -m compileall custom_components
+```
 
-TASK COMPLETION RULES:
-- Your task is complete when:
-  - Project is successfully scaffolded and compiled without errors
-  - copilot-instructions.md file in the .github directory exists in the project
-  - README.md file exists and is up to date
-  - User is provided with clear instructions to debug/launch the project
+### Configuration
+- Default poll interval: 30 seconds
+- Default pulses per kWh: 1000
+- Update timeout: 8 seconds for BLE notification
+- Connection retry using `bleak-retry-connector`
 
-Before starting a new task in the above plan, update progress in the plan.
--->
+### Adding New Features
+1. Update `const.py` if adding new constants or commands
+2. Modify `coordinator.py` for new BLE commands or data parsing
+3. Add entities in `sensor.py` (or new platforms like `binary_sensor.py`)
+4. Update `strings.json` for UI text
+5. Test syntax with `python -m compileall`
 
-- Work through each checklist item systematically.
-- Keep communication concise and focused.
-- Follow development best practices.
+### Error Handling
+- Use `UpdateFailed` exception in coordinator when BLE operations fail
+- Log warnings for connection issues, timeouts
+- Handle missing BLE device gracefully
+- Provide meaningful error messages in config flow
+
+## Common Tasks
+
+### Adding a New Sensor
+1. Parse new data in `EmeraldBleClient.async_fetch()`
+2. Add sensor entity class in `sensor.py`
+3. Register in `async_setup_entry()` in `sensor.py`
+4. Add translations in `strings.json`
+
+### Modifying BLE Protocol
+1. Update UUIDs or commands in `const.py`
+2. Adjust `async_fetch()` in `coordinator.py`
+3. Update parsing logic for new packet formats
+4. Test with actual hardware or BLE simulator
+
+### Updating Config Flow
+1. Modify schema in `config_flow.py`
+2. Update `strings.json` for UI labels
+3. Handle new configuration options in `coordinator.py`
+4. Migrate existing entries if needed (bump `VERSION`)
+
+## Resources
+
+- **README.md:** Project overview and installation instructions
+- **Home Assistant Docs:** https://developers.home-assistant.io/
+- **BLE Protocol:** Documented in linked repository (see README references)
+- **manifest.json:** Update `documentation` and `issue_tracker` URLs to match your deployment
+
+## Notes
+
+- This integration uses `local_polling` IoT class (no cloud dependency)
+- Bluetooth must be enabled on the Home Assistant host
+- Device must be within BLE range during setup and polling
+- Passkey field is stored but not yet used for pairing (future enhancement)
