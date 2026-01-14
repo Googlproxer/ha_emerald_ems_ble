@@ -55,24 +55,47 @@ class EmeraldConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             title = user_input.get(CONF_NAME) or "Emerald Energy Advisor"
             return self.async_create_entry(title=title, data=user_input)
 
+        # Fetch discovered Bluetooth devices
+        discovered_devices = {}
+        scanner = bluetooth.async_get_scanner(self.hass)
+        for device in scanner.discovered_devices:
+            device_name = device.name or "Unknown"
+            discovered_devices[device.address] = f"{device_name} ({device.address})"
+
         # Pre-fill address and name if we have discovery info
         defaults = {}
         if self._discovery_info:
             defaults[CONF_ADDRESS] = self._discovery_info.address
             defaults[CONF_NAME] = self._discovery_info.name or "Emerald Energy Advisor"
+            # Ensure discovered device is in the list
+            if self._discovery_info.address not in discovered_devices:
+                device_name = self._discovery_info.name or "Unknown"
+                discovered_devices[self._discovery_info.address] = f"{device_name} ({self._discovery_info.address})"
 
-        data_schema = vol.Schema(
-            {
-                vol.Required(CONF_ADDRESS, default=defaults.get(CONF_ADDRESS)): selector.BluetoothSelector(
-                    selector.BluetoothSelectorConfig()
-                ),
-                vol.Optional(CONF_NAME, default=defaults.get(CONF_NAME, "Emerald Energy Advisor")): str,
-                vol.Required(CONF_PULSES_PER_KWH, default=DEFAULT_PULSES_PER_KWH): vol.All(
-                    int, vol.Range(min=1, max=20000)
-                ),
-                vol.Optional(CONF_PASSKEY, default=DEFAULT_PASSKEY): vol.Any(None, int),
-            }
-        )
+        # Build schema with Bluetooth device picker if devices are available
+        if discovered_devices:
+            data_schema = vol.Schema(
+                {
+                    vol.Required(CONF_ADDRESS, default=defaults.get(CONF_ADDRESS)): vol.In(discovered_devices),
+                    vol.Optional(CONF_NAME, default=defaults.get(CONF_NAME, "Emerald Energy Advisor")): str,
+                    vol.Required(CONF_PULSES_PER_KWH, default=DEFAULT_PULSES_PER_KWH): vol.All(
+                        int, vol.Range(min=1, max=20000)
+                    ),
+                    vol.Optional(CONF_PASSKEY, default=DEFAULT_PASSKEY): vol.Any(None, int),
+                }
+            )
+        else:
+            # Fallback to text input if no devices discovered
+            data_schema = vol.Schema(
+                {
+                    vol.Required(CONF_ADDRESS, default=defaults.get(CONF_ADDRESS)): selector.TextSelector(),
+                    vol.Optional(CONF_NAME, default=defaults.get(CONF_NAME, "Emerald Energy Advisor")): str,
+                    vol.Required(CONF_PULSES_PER_KWH, default=DEFAULT_PULSES_PER_KWH): vol.All(
+                        int, vol.Range(min=1, max=20000)
+                    ),
+                    vol.Optional(CONF_PASSKEY, default=DEFAULT_PASSKEY): vol.Any(None, int),
+                }
+            )
 
         return self.async_show_form(
             step_id="user",
